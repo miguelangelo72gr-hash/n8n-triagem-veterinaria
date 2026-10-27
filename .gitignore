@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+*credentials*
+*.log
+private/
+backups/
+exports-originais/
+.DS_Store
