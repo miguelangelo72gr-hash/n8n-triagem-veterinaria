@@ -1,0 +1,2901 @@
+{
+  "name": "PORTFOLIO | Triagem Veterinaria Noturna",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "TEST_MODE",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "c2",
+              "name": "LER_IMAGEM",
+              "value": "false",
+              "type": "string"
+            },
+            {
+              "id": "c3",
+              "name": "JANELA_INICIO",
+              "value": "20",
+              "type": "string"
+            },
+            {
+              "id": "c4",
+              "name": "JANELA_FIM",
+              "value": "8",
+              "type": "string"
+            },
+            {
+              "id": "c5",
+              "name": "VET_EMERGENCY_NUMBER",
+              "value": "CONFIGURE_PLANTONISTA",
+              "type": "string"
+            },
+            {
+              "id": "c6",
+              "name": "EVOLUTION_URL",
+              "value": "https://evolution.example.invalid",
+              "type": "string"
+            },
+            {
+              "id": "c7",
+              "name": "EVOLUTION_INSTANCE",
+              "value": "={{ $('Entrada Unificada').first().json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "c8",
+              "name": "UNIDADE",
+              "value": "={{ ($('Entrada Unificada').first().json.body.instance || '').includes('Unidade A') ? 'Unidade A' : ($('Entrada Unificada').first().json.body.instance || '').includes('Unidade B') ? 'Unidade B' : 'Desconhecida' }}",
+              "type": "string"
+            },
+            {
+              "id": "c9",
+              "name": "SILENCIO_HORAS",
+              "value": "12",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "demo-main-001",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ Boolean($json.body?.data?.message?.isGroup || $json.body?.data?.key?.remoteJid?.endsWith('@g.us') || $json.body?.data?.key?.remoteJidAlt?.endsWith('@g.us') || $json.body?.message?.isGroup) }}",
+              "operator": {
+                "operation": "equals",
+                "type": "boolean"
+              },
+              "rightValue": true
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-002",
+      "name": "Filtro Grupo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "demo-main-003",
+      "name": "Ignora Grupo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "conversation",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "nome",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "d3",
+              "name": "numero",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.key.remoteJid.split('@')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "d4",
+              "name": "fromMe",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.key.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "d5",
+              "name": "sender",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "d6",
+              "name": "messaType",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "d7",
+              "name": "base64",
+              "value": "={{ $('Entrada Unificada').item.json.body.data.message.base64 }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-004",
+      "name": "Dados",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT numero FROM handoff WHERE numero = $1 AND active = true AND created_at > NOW() - INTERVAL '12 hours' LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [$('Dados').item.json.numero] }}"
+        }
+      },
+      "id": "demo-main-005",
+      "name": "Verifica Handoff Ativo",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1136,
+        128
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ $json.numero }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-006",
+      "name": "If Handoff Ativo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1344,
+        128
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "demo-main-007",
+      "name": "Para Silencioso",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst dados = $('Dados').first().json;\nconst TEST_MODE = String(cfg.TEST_MODE) === 'true';\nconst ini = Number(cfg.JANELA_INICIO);\nconst fim = Number(cfg.JANELA_FIM);\nconst hora = DateTime.now().setZone('America/Sao_Paulo').hour;\nconst dentro = (hora >= ini || hora < fim);\nreturn [{ json: { ...dados, _passaGate: TEST_MODE || dentro } }];"
+      },
+      "id": "demo-main-008",
+      "name": "Time-Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "pg1",
+              "leftValue": "={{ $json._passaGate }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-009",
+      "name": "Passa Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Dados').item.json.messaType }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "demo-id-010"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Dados').item.json.messaType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "demo-id-011"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-010",
+      "name": "Switch Tipo",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2048,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base64 = $input.first().json.base64;\nconst buffer = Buffer.from(base64, 'base64');\nreturn [{ json: $input.first().json, binary: { data: await this.helpers.prepareBinaryData(buffer, 'audio.ogg', 'audio/ogg') } }];"
+      },
+      "id": "demo-main-011",
+      "name": "Audio para Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "demo-main-012",
+      "name": "Transcreve Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        2448,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "v1",
+              "name": "numero",
+              "value": "={{ $('Dados').item.json.numero }}",
+              "type": "string"
+            },
+            {
+              "id": "v2",
+              "name": "nome",
+              "value": "={{ $('Dados').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "v3",
+              "name": "messaType",
+              "value": "={{ $('Dados').item.json.messaType }}",
+              "type": "string"
+            },
+            {
+              "id": "v4",
+              "name": "conversation",
+              "value": "={{ $json.text || $('Dados').item.json.conversation }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-013",
+      "name": "SET_VARIAVEIS",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2624,
+        176
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "demo-main-014",
+      "name": "Fora da Janela",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $('SET_VARIAVEIS').item.json.numero }}",
+        "messageData": "={{ $('SET_VARIAVEIS').item.json.conversation }}",
+        "tail": true
+      },
+      "id": "demo-main-015",
+      "name": "Redis Push",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $('SET_VARIAVEIS').item.json.numero }}",
+        "keyType": "list",
+        "options": {}
+      },
+      "id": "demo-main-016",
+      "name": "Redis Get",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db1",
+              "leftValue": "={{ $json.propertyName.length }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-017",
+      "name": "If Debounce",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3216,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (8 - 4 + 1)) + 4 }}"
+      },
+      "id": "demo-main-018",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3440,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $('SET_VARIAVEIS').item.json.numero }}",
+        "keyType": "list",
+        "options": {}
+      },
+      "id": "demo-main-019",
+      "name": "Redis Get 2",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3616,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc1",
+              "name": "message",
+              "value": "={{ $('Check Growth').item.json.messages.join('\\n') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-020",
+      "name": "Concatena",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3840,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('SET_VARIAVEIS').item.json.numero }}"
+      },
+      "id": "demo-main-021",
+      "name": "Redis Delete",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4064,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "su1",
+              "name": "user_name",
+              "value": "={{ $('SET_VARIAVEIS').item.json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "su2",
+              "name": "user_number",
+              "value": "={{ $('SET_VARIAVEIS').item.json.numero }}",
+              "type": "string"
+            },
+            {
+              "id": "su3",
+              "name": "user_message",
+              "value": "={{ $('Concatena').item.json.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-022",
+      "name": "Set_User",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4240,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const mh = $('Monta Historico').first().json || {};\nreturn [{ json: {\n  output: mh.output || '',\n  emergencia: mh.emergencia === true,\n  modo: mh.modo || null,\n  motivo_alerta: mh.motivo_alerta || null,\n  classificacao_real: mh.classificacao_real || null,\n  criterio_disparado: mh.criterio_disparado || null,\n  intent: mh.intent || null\n} }];"
+      },
+      "id": "demo-main-023",
+      "name": "Detecta Emergencia",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6464,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e1",
+              "leftValue": "={{ $json.emergencia }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-024",
+      "name": "If Emergencia",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6752,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO handoff (numero, active) VALUES ($1, true) ON CONFLICT (numero) DO UPDATE SET active = true, created_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [$('Set_User').first().json.user_number] }}"
+        }
+      },
+      "id": "demo-main-025",
+      "name": "Insere Handoff",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        6976,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO triagem (numero, status, nome, relato, classificacao) VALUES ($1, 'emergencia', $2, $3, 'emergencia') ON CONFLICT (numero) DO UPDATE SET status = 'emergencia', classificacao = 'emergencia', created_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [$('Set_User').first().json.user_number, $('Set_User').first().json.user_name, $('Set_User').first().json.user_message] }}"
+        }
+      },
+      "id": "demo-main-026",
+      "name": "Log Triagem Emergencia",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        7440,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const texto = String($('Detecta Emergencia').first().json.output || '').trim();\nconst limite = 320;\nconst minimoParaPontuacao = Math.floor(limite * 0.55);\n\nfunction quebrarSemCortarPalavra(trecho) {\n  const partes = [];\n  let restante = trecho.trim();\n\n  while (restante.length > limite) {\n    let corte = -1;\n    const janela = restante.slice(0, limite + 1);\n\n    // Prioriza fim de frase perto do limite.\n    for (let i = minimoParaPontuacao; i < janela.length; i++) {\n      if (/[.!?]/.test(janela[i]) && (i === janela.length - 1 || /\\s/.test(janela[i + 1]))) {\n        corte = i + 1;\n      }\n    }\n\n    // Sem fim de frase adequado, corta no ultimo espaco.\n    if (corte < 1) corte = janela.lastIndexOf(' ');\n    if (corte < 1) corte = limite;\n\n    const parte = restante.slice(0, corte).trim();\n    if (parte) partes.push(parte);\n    restante = restante.slice(corte).trim();\n  }\n\n  if (restante) partes.push(restante);\n  return partes;\n}\n\nconst paragrafos = texto.split(/\\n+/).map(p => p.trim()).filter(Boolean);\nconst mensagens = paragrafos.flatMap(quebrarSemCortarPalavra);\nconst finais = mensagens.length ? mensagens : [texto];\n\nreturn finais.map(message => ({ json: { message } }));"
+      },
+      "id": "demo-main-027",
+      "name": "Split Mensagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7664,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO triagem (numero, status, nome, relato, classificacao) VALUES ($1, 'nao_emergencia', $2, $3, 'nao_emergencia') ON CONFLICT (numero) DO UPDATE SET status = 'nao_emergencia', classificacao = 'nao_emergencia', created_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [$('Set_User').first().json.user_number, $('Set_User').first().json.user_name, $('Set_User').first().json.user_message] }}"
+        }
+      },
+      "id": "demo-main-028",
+      "name": "Log Triagem Nao",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        7440,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.EVOLUTION_URL }}/message/sendText/{{ $('Config').first().json.EVOLUTION_INSTANCE }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $('Set_User').first().json.user_number, text: $json.message, delay: 2000 }) }}",
+        "options": {}
+      },
+      "id": "demo-main-029",
+      "name": "Envio Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        8128,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "demo-main-030",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        7888,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. ENTRADA & FILTROS\nRecebe o webhook da Evolution, guarda os parâmetros no nó Config, ignora mensagens de grupo e extrai os dados do tutor (nome, número, texto/áudio).",
+        "height": 520,
+        "width": 1164,
+        "color": 4
+      },
+      "id": "demo-main-031",
+      "name": "Sticky Note ad336470",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. HANDOFF (modo silencioso)\nSe esse número já está em atendimento humano (tabela handoff), o bot fica MUDO e não responde.",
+        "height": 520,
+        "width": 620,
+        "color": 3
+      },
+      "id": "demo-main-032",
+      "name": "Sticky Note 2256081d",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1072,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. TIME-GATE NOTURNO\nSó deixa passar se estiver na janela noturna (JANELA_INICIO–JANELA_FIM) OU se TEST_MODE estiver ligado. De dia, o bot não responde.",
+        "height": 520,
+        "width": 252,
+        "color": 5
+      },
+      "id": "demo-main-033",
+      "name": "Sticky Note bbc72d7b",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4. ÁUDIO vs TEXTO\nSe for áudio, converte e transcreve (Whisper). Junta tudo em SET_VARIAVEIS.",
+        "height": 520,
+        "width": 812,
+        "color": 6
+      },
+      "id": "demo-main-034",
+      "name": "Sticky Note d294f0c8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5. DEBOUNCE (junta mensagens)\nEspera 2s e agrega mensagens picadas numa só, evitando responder cada pedacinho.",
+        "height": 520,
+        "width": 1628,
+        "color": 7
+      },
+      "id": "demo-main-035",
+      "name": "Sticky Note 199bc83c",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 6. CÉREBRO V2 (decomposição — TRIAGEM-V2-F1)\n",
+        "height": 520,
+        "width": 2284,
+        "color": 5
+      },
+      "id": "demo-main-036",
+      "name": "Sticky Note b293fc6a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4416,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 7. ESCALADA DE EMERGÊNCIA\nDetecta a tag [EMERGENCIA]. Se for grave: grava handoff (silencia o bot), alerta o plantonista e loga. Senão, só loga.",
+        "height": 520,
+        "width": 876,
+        "color": 2
+      },
+      "id": "demo-main-037",
+      "name": "Sticky Note b0b568b6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 8. ENVIO AO CLIENTE\nQuebra a resposta em pedaços de 220 caracteres e envia ao tutor pelo WhatsApp (Evolution).",
+        "height": 520,
+        "width": 678,
+        "color": 4
+      },
+      "id": "demo-main-038",
+      "name": "Sticky Note 0ff27cea",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7600,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "id": "demo-main-039",
+      "name": "Wait1",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        8128,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return Array.from({length: 5}, () => ({ json: {} }));"
+      },
+      "id": "demo-main-040",
+      "name": "Gera Alertas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6960,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "demo-main-041",
+      "name": "Loop Alertas",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        7152,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.EVOLUTION_URL }}/message/sendText/{{ $('Config').first().json.EVOLUTION_INSTANCE }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"number\": \"{{ $('Config').first().json.VET_EMERGENCY_NUMBER }}\", \"text\": \"🚨 EMERGÊNCIA CLINICA EXEMPLO — atenção imediata\" }",
+        "options": {}
+      },
+      "id": "demo-main-042",
+      "name": "Envia Alerta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        7168,
+        800
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 1.5
+      },
+      "id": "demo-main-043",
+      "name": "Wait Alerta",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        7376,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.EVOLUTION_URL }}/message/sendText/{{ $('Config').first().json.EVOLUTION_INSTANCE }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: $('Config').first().json.VET_EMERGENCY_NUMBER, text: ($('Detecta Emergencia').first().json.motivo_alerta ? \"⚠️ \" + $('Detecta Emergencia').first().json.motivo_alerta + \"\\n\\n\" : \"\") + \"🚨 EMERGÊNCIA — triagem noturna Clínica Exemplo\\nUnidade: \" + $('Config').first().json.UNIDADE + \"\\n\\nTutor: \" + $('Set_User').first().json.user_name + \"\\nContato: \" + $('Set_User').first().json.user_number + \"\\nRelato: \" + $('Set_User').first().json.user_message + \"\\nHorário: \" + $now + \"\\n\\nO cliente foi avisado que o plantonista vai contatá-lo.\" }) }}",
+        "options": {}
+      },
+      "id": "demo-main-044",
+      "name": "Relatorio Emergencia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        6960,
+        800
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueErrorOutput",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## MENSAGENS DE ALERTA\n",
+        "height": 448,
+        "width": 880,
+        "color": 3
+      },
+      "id": "demo-main-045",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=debounce_count:{{ $('SET_VARIAVEIS').item.json.numero }}",
+        "value": "={{ $json.propertyName.length.toString() }}",
+        "keyType": "string"
+      },
+      "id": "demo-main-046",
+      "name": "Init Prev Count",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "prevCount",
+        "key": "=debounce_count:{{ $('SET_VARIAVEIS').item.json.numero }}",
+        "keyType": "string",
+        "options": {}
+      },
+      "id": "demo-main-047",
+      "name": "Redis Get PrevCount",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3696,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const current = $('Redis Get 2').first().json.propertyName || [];\nconst currentLen = current.length;\nconst prevRaw = $json.prevCount;\nconst prevLen = prevRaw ? parseInt(prevRaw, 10) : 0;\nreturn [{ json: { stillGrowing: currentLen > prevLen, currentLen, messages: current } }];"
+      },
+      "id": "demo-main-048",
+      "name": "Check Growth",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3856,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=debounce_count:{{ $('SET_VARIAVEIS').item.json.numero }}",
+        "value": "={{ $('Check Growth').item.json.currentLen.toString() }}",
+        "keyType": "string"
+      },
+      "id": "demo-main-049",
+      "name": "Update Prev Count",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4016,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sg1",
+              "leftValue": "={{ $('Check Growth').item.json.stillGrowing }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-050",
+      "name": "If Still Growing",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4176,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fr1",
+              "name": "node_falho",
+              "value": "Relatorio Emergencia",
+              "type": "string"
+            },
+            {
+              "id": "fr2",
+              "name": "erro",
+              "value": "={{ (typeof $json.error === 'string' ? $json.error : ($json.error?.message || JSON.stringify($json.error))) || 'erro desconhecido' }}",
+              "type": "string"
+            },
+            {
+              "id": "fr3",
+              "name": "numero",
+              "value": "={{ $('Set_User').first().json.user_number }}",
+              "type": "string"
+            },
+            {
+              "id": "fr4",
+              "name": "nome",
+              "value": "={{ $('Set_User').first().json.user_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fr5",
+              "name": "relato",
+              "value": "={{ $('Set_User').first().json.user_message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-051",
+      "name": "Falha Relatorio Emergencia",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6784,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe1",
+              "name": "node_falho",
+              "value": "Envia Alerta",
+              "type": "string"
+            },
+            {
+              "id": "fe2",
+              "name": "erro",
+              "value": "={{ (typeof $json.error === 'string' ? $json.error : ($json.error?.message || JSON.stringify($json.error))) || 'erro desconhecido' }}",
+              "type": "string"
+            },
+            {
+              "id": "fe3",
+              "name": "numero",
+              "value": "={{ $('Set_User').first().json.user_number }}",
+              "type": "string"
+            },
+            {
+              "id": "fe4",
+              "name": "nome",
+              "value": "={{ $('Set_User').first().json.user_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fe5",
+              "name": "relato",
+              "value": "={{ $('Set_User').first().json.user_message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-052",
+      "name": "Falha Envia Alerta",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        6992,
+        1216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO alerta_falha (numero, nome, node_falho, erro, relato, workflow, execution_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING numero, nome, node_falho, erro, relato",
+        "options": {
+          "queryReplacement": "={{ [$json.numero, $json.nome, $json.node_falho, $json.erro, $json.relato, $workflow.name, $execution.id] }}"
+        }
+      },
+      "id": "demo-main-053",
+      "name": "Log Falha Alerta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        7216,
+        1216
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Config').first().json.EVOLUTION_URL }}/message/sendText/INSTANCIA_FALLBACK_EXEMPLO",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ number: \"CONFIGURE_SUPORTE\", text: \"⚠️ FALHA ao enviar alerta de emergência Clínica Exemplo.\\nWorkflow: \" + $workflow.name + \"\\nNo: \" + ($json.node_falho || 'desconhecido') + \"\\nErro: \" + ($json.erro || 'desconhecido') + \"\\nTutor: \" + ($json.nome || '?') + \" (\" + ($json.numero || '?') + \")\\nRelato: \" + ($json.relato || '?') + \"\\nExecucao: \" + $execution.id + \"\\n\\nVerifique a Evolution/credencial AGORA — o plantonista NAO foi avisado.\" }) }}",
+        "options": {}
+      },
+      "id": "demo-main-054",
+      "name": "Avisa Suporte Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        7440,
+        1216
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 9. FALLBACK - ALERTA NAO ENTREGUE\nSe `Envia Alerta` ou `Relatorio Emergencia` falharem apos 3 tentativas, a saida de erro cai aqui: grava em `alerta_falha` (Postgres) e avisa o suporte (CONFIGURE_SUPORTE) por WhatsApp usando a credencial **Evolution Fallback (configurar)** + instancia **INSTANCIA_FALLBACK_EXEMPLO** - caminho independente da credencial/instancia que falhou.",
+        "height": 336,
+        "width": 940,
+        "color": 3
+      },
+      "id": "demo-main-055",
+      "name": "Sticky Note Falha Alerta",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6720,
+        1040
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT historico_mensagens FROM triagem_memoria WHERE numero = $1 LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [$('Set_User').first().json.user_number] }}"
+        }
+      },
+      "id": "demo-main-056",
+      "name": "Ler Historico",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        4496,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $('Ler Historico').first().json;\nlet arr = raw && raw.historico_mensagens;\nif (typeof arr === 'string') { try { arr = JSON.parse(arr); } catch (e) { arr = []; } }\nif (!Array.isArray(arr)) arr = [];\nconst janela = arr.slice(-6);\nlet texto = '';\nfor (const m of janela) {\n  if (!m) continue;\n  const role = m.role === 'assistant' ? 'Assistant' : 'User';\n  texto += role + ': ' + (m.content || '') + '\\n\\n';\n}\ntexto = texto.trim();\nif (!texto) texto = 'Nenhuma conversa anterior. Esta e a primeira interacao.';\nreturn [{ json: { historico_texto: texto, historico_array: arr } }];"
+      },
+      "id": "demo-main-057",
+      "name": "FORMATA_HISTORICO",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4704,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=triagem_vago:{{ $('Set_User').first().json.user_number }}",
+        "keyType": "string",
+        "options": {}
+      },
+      "id": "demo-main-058",
+      "name": "Ler Rodadas",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4896,
+        96
+      ],
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "CONFIGURE_SUBWORKFLOW_ID",
+          "mode": "id"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true,
+          "schema": [
+            {
+              "id": "mensagem",
+              "displayName": "mensagem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "historico_texto",
+              "displayName": "historico_texto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "rodadas_vagas",
+              "displayName": "rodadas_vagas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "unidade",
+              "displayName": "unidade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "simular_classificador_invalido",
+              "displayName": "simular_classificador_invalido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean"
+            }
+          ],
+          "value": {
+            "mensagem": "={{ $('Set_User').first().json.user_message }}",
+            "historico_texto": "={{ $('FORMATA_HISTORICO').first().json.historico_texto }}",
+            "rodadas_vagas": "={{ Number($('Ler Rodadas').first().json.propertyName) || 0 }}",
+            "unidade": "={{ $('Config').first().json.UNIDADE }}",
+            "simular_classificador_invalido": false
+          }
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "demo-main-059",
+      "name": "Chamar SUB-triagem-cerebro",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5120,
+        96
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const su = $('Set_User').first().json;\nlet erro = 'erro desconhecido';\ntry {\n  const e = $json.error;\n  erro = typeof e === 'string' ? e : ((e && e.message) || JSON.stringify(e) || erro);\n} catch (x) {}\n\nreturn [{ json: {\n  classificacao: null,\n  classificacao_real: 'falha_tecnica',\n  emergencia: false,\n  modo: 'falha_tecnica',\n  criterio_disparado: null,\n  confianca: null,\n  precisa_mais_info: false,\n  intent: null,\n  tem_pergunta_info: false,\n  motivo_alerta: 'Falha tecnica na triagem automatica (' + erro + '). Revisao manual necessaria para o tutor ' + (su.user_name || '?') + ' (' + (su.user_number || '?') + '). Relato: ' + (su.user_message || '?'),\n  output: 'Tivemos uma instabilidade no atendimento automatico e nao consegui concluir a triagem. Por seguranca, entre em contato diretamente com o plantao. Se o seu pet estiver com dificuldade para respirar, inconsciente, convulsionando, sangrando muito ou piorando rapido, procure atendimento veterinario de emergencia imediatamente.',\n  _captura: null\n} }];"
+      },
+      "id": "demo-main-060",
+      "name": "Fallback Falha Triagem",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5488,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $input.first().json || {};\nconst emergencia = j.emergencia === true;\nconst modo = j.modo || (emergencia ? 'emergencia' : 'final');\nreturn [{ json: {\n  classificacao: (j.classificacao === undefined ? null : j.classificacao),\n  classificacao_real: j.classificacao_real || (emergencia ? 'emergencia' : 'nao_emergencia'),\n  emergencia: emergencia,\n  modo: modo,\n  criterio_disparado: (j.criterio_disparado === undefined ? null : j.criterio_disparado),\n  confianca: j.confianca || null,\n  precisa_mais_info: j.precisa_mais_info === true,\n  intent: (j.intent === undefined ? null : j.intent),\n  tem_pergunta_info: j.tem_pergunta_info === true,\n  motivo_alerta: (j.motivo_alerta === undefined ? null : j.motivo_alerta),\n  output: (j.output || '').toString(),\n  _captura: (j._captura === undefined ? null : j._captura)\n} }];"
+      },
+      "id": "demo-main-061",
+      "name": "Pos-Processo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5360,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "mp1",
+              "leftValue": "={{ $json.modo }}",
+              "rightValue": "pergunta",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-062",
+      "name": "IF modo pergunta",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5584,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=triagem_vago:{{ $('Set_User').first().json.user_number }}",
+        "value": "={{ (Number($('Ler Rodadas').first().json.propertyName) || 0) + 1 }}",
+        "keyType": "string"
+      },
+      "id": "demo-main-063",
+      "name": "Redis SET Rodadas",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        5808,
+        -16
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=triagem_vago:{{ $('Set_User').first().json.user_number }}"
+      },
+      "id": "demo-main-064",
+      "name": "Redis DEL Rodadas",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        5808,
+        176
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const su = $('Set_User').first().json;\nconst fh = $('FORMATA_HISTORICO').first().json || {};\nconst pp = $('Pos-Processo').first().json || {};\nlet arr = Array.isArray(fh.historico_array) ? fh.historico_array.slice() : [];\nlet msgId = '';\ntry { msgId = ($('Entrada Unificada').first().json.body.data.key.id) || ''; } catch (e) {}\nconst jaTem = !!msgId && arr.some(function (m) { return m && m.msg_id === msgId; });\nconst nowIso = new Date().toISOString();\nif (!jaTem) {\n  const turnoUser = { role: 'user', content: su.user_message, ts: nowIso };\n  if (msgId) turnoUser.msg_id = msgId;\n  arr.push(turnoUser);\n  arr.push({ role: 'assistant', content: pp.output || '', ts: nowIso });\n}\nreturn [{ json: {\n  historico_final: arr,\n  classificacao_real: pp.classificacao_real || null,\n  output: pp.output || '',\n  emergencia: pp.emergencia === true,\n  modo: pp.modo || null,\n  motivo_alerta: pp.motivo_alerta || null,\n  criterio_disparado: pp.criterio_disparado || null,\n  intent: pp.intent || null\n} }];"
+      },
+      "id": "demo-main-065",
+      "name": "Monta Historico",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6016,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO triagem_memoria (numero, historico_mensagens, ultima_classificacao) VALUES ($1, $2::jsonb, $3) ON CONFLICT (numero) DO UPDATE SET historico_mensagens = $2::jsonb, ultima_classificacao = $3, updated_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [$('Set_User').first().json.user_number, JSON.stringify($('Monta Historico').first().json.historico_final), $('Monta Historico').first().json.classificacao_real] }}"
+        }
+      },
+      "id": "demo-main-066",
+      "name": "Grava Turno",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        6224,
+        96
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const su = $('Set_User').first().json;\nconst pp = $('Pos-Processo').first().json || {};\nconst cap = pp._captura;\nif (!cap || !cap.classificador) return [];\nconst nome = (su.user_name || '').trim();\nfunction scrub(v) {\n  let s = typeof v === 'string' ? v : JSON.stringify(v);\n  if (!s) return v;\n  if (nome && nome.length > 1) s = s.split(nome).join('[REDACTED_NOME]');\n  s = s.replace(/\\b\\d{10,13}\\b/g, '[REDACTED_FONE]');\n  s = s.replace(/\\(\\d{2}\\)\\s?\\d{4,5}-?\\d{4}/g, '[REDACTED_FONE]');\n  s = s.replace(/[\\w.+-]+@[\\w-]+\\.[\\w.-]+/g, '[REDACTED_EMAIL]');\n  s = s.replace(/\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}/g, '[REDACTED_CPF]');\n  if (typeof v === 'string') return s;\n  try { return JSON.parse(s); } catch (e) { return s; }\n}\nconst rows = [];\nrows.push({ ai_node_name: 'Classificador', input_anonymized: scrub(cap.classificador.input || {}), output_anonymized: scrub(cap.classificador.output_raw || {}) });\nif (cap.compositor && cap.compositor.nome && cap.compositor.nome !== 'template_horario') {\n  rows.push({ ai_node_name: cap.compositor.nome, input_anonymized: scrub(cap.compositor.input || {}), output_anonymized: scrub(cap.compositor.output_raw || '') });\n}\nreturn rows.map(function (r) { return { json: r }; });"
+      },
+      "id": "demo-main-067",
+      "name": "Anonymize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6752,
+        64
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ai_evals_capture (workflow_id, ai_node_name, execution_id, input_anonymized, output_anonymized, anonymization_rules) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,'v1')",
+        "options": {
+          "queryReplacement": "={{ ['TRIAGEM-V2-F1', $json.ai_node_name, $execution.id, JSON.stringify($json.input_anonymized), JSON.stringify($json.output_anonymized)] }}"
+        }
+      },
+      "id": "demo-main-068",
+      "name": "INSERT ai_evals_capture",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        6960,
+        64
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "mpl1",
+              "leftValue": "={{ $json.modo }}",
+              "rightValue": "pergunta",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-069",
+      "name": "IF Modo Pergunta (log)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8480,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO triagem (numero, status, nome, relato, classificacao) VALUES ($1, 'em_coleta', $2, $3, 'ambiguo') ON CONFLICT (numero) DO UPDATE SET status = 'em_coleta', classificacao = 'ambiguo', created_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [$('Set_User').first().json.user_number, $('Set_User').first().json.user_name, $('Set_User').first().json.user_message] }}"
+        }
+      },
+      "id": "demo-main-070",
+      "name": "Log em_coleta",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        8720,
+        -128
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "demo-main-071",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1312,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Cria GLOBAL current_state",
+        "height": 528,
+        "width": 608,
+        "color": 7
+      },
+      "id": "demo-main-072",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "GLOBAL SESSION",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "number",
+              "fieldValue": "={{ $('Dados').item.json.numero }}"
+            },
+            {
+              "fieldId": "current_state",
+              "fieldValue": "triagem_noturna"
+            }
+          ]
+        }
+      },
+      "id": "demo-main-073",
+      "name": "global_current_state",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        912,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-triagem-veterinaria-exemplo",
+        "options": {}
+      },
+      "id": "demo-main-074",
+      "name": "Webhook_3",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1312,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "GLOBAL SESSION",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "number",
+              "condition": "eq",
+              "keyValue": "={{ $('Set_User').first().json.user_number }}"
+            },
+            {
+              "keyName": "current_state",
+              "condition": "eq",
+              "keyValue": "triagem_noturna"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "current_state"
+            }
+          ]
+        }
+      },
+      "id": "demo-main-075",
+      "name": "Atualizar estado global",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        8480,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "GLOBAL SESSION",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "number",
+              "keyValue": "={{ $('Dados').item.json.numero }}"
+            }
+          ]
+        }
+      },
+      "id": "demo-main-076",
+      "name": "Get a row",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        528,
+        112
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "demo-id-079",
+              "leftValue": "={{ $json.number || '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-077",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        704,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Unifica webhook direto e chamada via Webhook Central.\nconst item = $input.first().json || {};\nlet body = item.body;\n\nif (body) {\n  const data = body.data || {};\n  const key = data.key || {};\n  const normalizedRemoteJid = item.number\n    ? item.number + '@s.whatsapp.net'\n    : (key.remoteJid || item.remoteJid || '');\n\n  body = {\n    ...body,\n    data: {\n      ...data,\n      key: {\n        ...key,\n        remoteJid: normalizedRemoteJid\n      }\n    }\n  };\n} else {\n  const remoteJid = item.remoteJid || (item.number ? item.number + '@s.whatsapp.net' : '');\n  body = {\n    instance: item.instance || '',\n    data: {\n      key: { remoteJid, fromMe: false, id: item.msg_id || undefined },\n      message: { conversation: item.mensagem_atual || '' },\n      pushName: item.nome || '',\n      messageType: item.messageType || 'conversation'\n    }\n  };\n}\n\nreturn [{ json: { body } }];"
+      },
+      "id": "demo-main-078",
+      "name": "Entrada Unificada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "GLOBAL SESSION",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "number",
+              "condition": "eq",
+              "keyValue": "={{ $('Set_User').first().json.user_number }}"
+            },
+            {
+              "keyName": "current_state",
+              "condition": "eq",
+              "keyValue": "triagem_noturna"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "current_state"
+            }
+          ]
+        }
+      },
+      "id": "demo-main-079",
+      "name": "Atualizar Estado Global (Emergencia)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6976,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ft1",
+              "leftValue": "={{ $json.classificacao_real }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "falha_tecnica"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "id": "demo-main-080",
+      "name": "If Falha Tecnica",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6752,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "abstencao-contextual",
+              "leftValue": "={{ $json.decisao_contextual }}",
+              "rightValue": "nao_intervir",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "demo-main-081",
+      "name": "IF Abstencao Contextual",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5008,
+        32
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "demo-main-082",
+      "name": "Encerra Abstencao Silenciosa",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5232,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const j = $input.first().json || {};\nconst cap = j._captura && j._captura.gate_contextual;\nif (!cap) return [];\nfunction scrub(v) {\n  let s = typeof v === 'string' ? v : JSON.stringify(v);\n  if (!s) return v;\n  s = s.replace(/\\b\\d{10,13}\\b/g, '[REDACTED_FONE]');\n  s = s.replace(/\\(\\d{2}\\)\\s?\\d{4,5}-?\\d{4}/g, '[REDACTED_FONE]');\n  s = s.replace(/[\\w.+-]+@[\\w-]+\\.[\\w.-]+/g, '[REDACTED_EMAIL]');\n  s = s.replace(/\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}/g, '[REDACTED_CPF]');\n  if (typeof v === 'string') return s;\n  try { return JSON.parse(s); } catch (e) { return s; }\n}\nreturn [{ json: {\n  ai_node_name: 'Gate Contextual',\n  input_anonymized: scrub(cap.input || {}),\n  output_anonymized: scrub(cap.output_raw || {}),\n  decisao_contextual: j.decisao_contextual || null\n} }];"
+      },
+      "id": "demo-main-083",
+      "name": "Anonymize Gate Contextual",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5360,
+        -272
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ai_evals_capture (workflow_id, ai_node_name, execution_id, input_anonymized, output_anonymized, anonymization_rules) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,'v1')",
+        "options": {
+          "queryReplacement": "={{ ['TRIAGEM-CONTEXTO-ABSTENCAO', $json.ai_node_name, $execution.id, JSON.stringify($json.input_anonymized), JSON.stringify($json.output_anonymized)] }}"
+        }
+      },
+      "id": "demo-main-084",
+      "name": "INSERT Gate ai_evals_capture",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        5584,
+        -272
+      ],
+      "retryOnFail": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## Observabilidade do Gate Contextual\\nRamificação paralela e anonimizada. Falhas de captura não alteram a decisão, não geram envio e não impedem o silêncio.",
+        "height": 256,
+        "width": 608,
+        "color": 6
+      },
+      "id": "demo-main-085",
+      "name": "Sticky Note - Captura Gate",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5264,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fm-save-history",
+              "leftValue": "={{ $json.body?.data?.key?.fromMe === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "demo-main-086",
+      "name": "IF fromMe - salvar historico",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH incoming AS (\n  SELECT $1::text AS numero, $2::text AS conteudo, $3::text AS msg_id\n),\nupserted AS (\n  INSERT INTO triagem_memoria (numero, historico_mensagens, ultima_classificacao)\n  SELECT numero,\n         jsonb_build_array(jsonb_build_object(\n           'role','assistant',\n           'origin','human_outbound',\n           'content',conteudo,\n           'ts',to_jsonb(NOW()),\n           'msg_id',msg_id\n         )),\n         'human_outbound'\n  FROM incoming\n  WHERE msg_id <> ''\n  ON CONFLICT (numero) DO UPDATE\n  SET historico_mensagens = CASE\n        WHEN EXISTS (\n          SELECT 1\n          FROM jsonb_array_elements(COALESCE(triagem_memoria.historico_mensagens,'[]'::jsonb)) item\n          WHERE item->>'msg_id'=(SELECT msg_id FROM incoming)\n        )\n        THEN COALESCE(triagem_memoria.historico_mensagens,'[]'::jsonb)\n        ELSE COALESCE(triagem_memoria.historico_mensagens,'[]'::jsonb) || EXCLUDED.historico_mensagens\n      END,\n      ultima_classificacao = COALESCE(triagem_memoria.ultima_classificacao,'human_outbound'),\n      updated_at = CASE\n        WHEN EXISTS (\n          SELECT 1\n          FROM jsonb_array_elements(COALESCE(triagem_memoria.historico_mensagens,'[]'::jsonb)) item\n          WHERE item->>'msg_id'=(SELECT msg_id FROM incoming)\n        )\n        THEN triagem_memoria.updated_at\n        ELSE NOW()\n      END\n  RETURNING numero,historico_mensagens,ultima_classificacao\n)\nSELECT u.numero,\n       (SELECT COUNT(*)::int FROM jsonb_array_elements(u.historico_mensagens) item WHERE item->>'msg_id'=i.msg_id) AS msg_id_count,\n       jsonb_array_length(u.historico_mensagens) AS historico_count,\n       u.ultima_classificacao\nFROM upserted u\nCROSS JOIN incoming i;",
+        "options": {
+          "queryReplacement": "={{ [String($('Entrada Unificada').first().json.body?.data?.key?.remoteJid || '').split('@')[0].replace(/\\D/g, ''), String($('Entrada Unificada').first().json.body?.data?.message?.conversation || $('Entrada Unificada').first().json.body?.data?.message?.extendedTextMessage?.text || $('Entrada Unificada').first().json.body?.data?.message?.imageMessage?.caption || $('Entrada Unificada').first().json.body?.data?.message?.videoMessage?.caption || '[mensagem enviada pela equipe]'), String($('Entrada Unificada').first().json.body?.data?.key?.id || '')] }}"
+        }
+      },
+      "id": "demo-main-087",
+      "name": "Grava fromMe idempotente",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        288,
+        -304
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "demo-main-088",
+      "name": "Encerra fromMe silencioso",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        544,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Histórico fiel de mensagens da equipe\n`fromMe=true` segue por uma rota exclusiva: salva como `assistant` + `origin=human_outbound`, deduplica por `msg_id` e encerra sem chamar IA ou enviar mensagem.",
+        "height": 280,
+        "width": 720,
+        "color": 5
+      },
+      "id": "demo-main-089",
+      "name": "Sticky fromMe - historico fiel",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -480
+      ]
+    }
+  ],
+  "connections": {
+    "Filtro Grupo": {
+      "main": [
+        [
+          {
+            "node": "Ignora Grupo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dados": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verifica Handoff Ativo": {
+      "main": [
+        [
+          {
+            "node": "If Handoff Ativo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Handoff Ativo": {
+      "main": [
+        [
+          {
+            "node": "Para Silencioso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Time-Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Time-Gate": {
+      "main": [
+        [
+          {
+            "node": "Passa Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Passa Gate": {
+      "main": [
+        [
+          {
+            "node": "Switch Tipo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fora da Janela",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Tipo": {
+      "main": [
+        [
+          {
+            "node": "Audio para Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SET_VARIAVEIS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio para Buffer": {
+      "main": [
+        [
+          {
+            "node": "Transcreve Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcreve Audio": {
+      "main": [
+        [
+          {
+            "node": "SET_VARIAVEIS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET_VARIAVEIS": {
+      "main": [
+        [
+          {
+            "node": "Redis Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Push": {
+      "main": [
+        [
+          {
+            "node": "Redis Get",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Get": {
+      "main": [
+        [
+          {
+            "node": "If Debounce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Redis Get 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Concatena": {
+      "main": [
+        [
+          {
+            "node": "Redis Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Delete": {
+      "main": [
+        [
+          {
+            "node": "Set_User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Emergencia": {
+      "main": [
+        [
+          {
+            "node": "Insere Handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Modo Pergunta (log)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Triagem Emergencia": {
+      "main": [
+        [
+          {
+            "node": "Split Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Triagem Nao": {
+      "main": [
+        [
+          {
+            "node": "Split Mensagem",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Atualizar estado global",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envio Cliente": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Envio Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insere Handoff": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Estado Global (Emergencia)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gera Alertas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gera Alertas": {
+      "main": [
+        [
+          {
+            "node": "Loop Alertas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Alertas": {
+      "main": [
+        [
+          {
+            "node": "Relatorio Emergencia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Envia Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia Alerta": {
+      "main": [
+        [
+          {
+            "node": "Wait Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Falha Envia Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Alerta": {
+      "main": [
+        [
+          {
+            "node": "Loop Alertas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Relatorio Emergencia": {
+      "main": [
+        [
+          {
+            "node": "Log Triagem Emergencia",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Falha Relatorio Emergencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Debounce": {
+      "main": [
+        [
+          {
+            "node": "Init Prev Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Prev Count": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Get 2": {
+      "main": [
+        [
+          {
+            "node": "Redis Get PrevCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Get PrevCount": {
+      "main": [
+        [
+          {
+            "node": "Check Growth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Growth": {
+      "main": [
+        [
+          {
+            "node": "Update Prev Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Prev Count": {
+      "main": [
+        [
+          {
+            "node": "If Still Growing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Still Growing": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Concatena",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Falha Relatorio Emergencia": {
+      "main": [
+        [
+          {
+            "node": "Log Falha Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Falha Envia Alerta": {
+      "main": [
+        [
+          {
+            "node": "Log Falha Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Falha Alerta": {
+      "main": [
+        [
+          {
+            "node": "Avisa Suporte Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_User": {
+      "main": [
+        [
+          {
+            "node": "Ler Historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Historico": {
+      "main": [
+        [
+          {
+            "node": "FORMATA_HISTORICO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FORMATA_HISTORICO": {
+      "main": [
+        [
+          {
+            "node": "Ler Rodadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ler Rodadas": {
+      "main": [
+        [
+          {
+            "node": "Chamar SUB-triagem-cerebro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar SUB-triagem-cerebro": {
+      "main": [
+        [
+          {
+            "node": "IF Abstencao Contextual",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anonymize Gate Contextual",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback Falha Triagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Falha Triagem": {
+      "main": [
+        [
+          {
+            "node": "Pos-Processo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pos-Processo": {
+      "main": [
+        [
+          {
+            "node": "IF modo pergunta",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Anonymize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF modo pergunta": {
+      "main": [
+        [
+          {
+            "node": "Redis SET Rodadas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis DEL Rodadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis SET Rodadas": {
+      "main": [
+        [
+          {
+            "node": "Monta Historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis DEL Rodadas": {
+      "main": [
+        [
+          {
+            "node": "Monta Historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Historico": {
+      "main": [
+        [
+          {
+            "node": "Grava Turno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grava Turno": {
+      "main": [
+        [
+          {
+            "node": "Detecta Emergencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anonymize": {
+      "main": [
+        [
+          {
+            "node": "INSERT ai_evals_capture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Modo Pergunta (log)": {
+      "main": [
+        [
+          {
+            "node": "Log em_coleta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Triagem Nao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log em_coleta": {
+      "main": [
+        [
+          {
+            "node": "Split Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "global_current_state": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook_3": {
+      "main": [
+        [
+          {
+            "node": "Entrada Unificada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Verifica Handoff Ativo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "global_current_state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Entrada Unificada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrada Unificada": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detecta Emergencia": {
+      "main": [
+        [
+          {
+            "node": "If Falha Tecnica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Falha Tecnica": {
+      "main": [
+        [
+          {
+            "node": "Split Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Emergencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Abstencao Contextual": {
+      "main": [
+        [
+          {
+            "node": "Encerra Abstencao Silenciosa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pos-Processo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anonymize Gate Contextual": {
+      "main": [
+        [
+          {
+            "node": "INSERT Gate ai_evals_capture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "IF fromMe - salvar historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF fromMe - salvar historico": {
+      "main": [
+        [
+          {
+            "node": "Grava fromMe idempotente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filtro Grupo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grava fromMe idempotente": {
+      "main": [
+        [
+          {
+            "node": "Encerra fromMe silencioso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo"
+  },
+  "pinData": {},
+  "staticData": null,
+  "tags": []
+}
